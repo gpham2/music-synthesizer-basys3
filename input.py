@@ -25,9 +25,10 @@ def close_serial_port(ser):
     ser.close()
 
 
-def write_data_to_file(data, filename='test.txt'):
+def write_data_to_file(bit_string, filename='test.txt'):
     with open(filename, 'a') as file:
-        file.write(str(data) + '\n')
+        file.write(bit_string + '\n')
+
 
 port_name = 'COM32'
 
@@ -51,16 +52,16 @@ try:
                 start_time = time.time()
                 prev_byte = byte
 
-                # byte should be 21 bits long turn it into array of size 8 of booleans
-                byte = int.from_bytes(byte, byteorder='big')
-                array_value = [bool(int(bit)) for bit in format(byte, '08b')]
+                # byte should be 8 bits long turn it into array of size 8 of 1s or 0s
+                byte_as_int = int.from_bytes(byte, byteorder='big')
+                bit_string = format(byte_as_int, '08b')
                 # print("Received byte:", array_value)
 
                 # ser.write(bytes(array_value))
-                write_data_to_file(array_value)
+                write_data_to_file(bit_string)
 
 
-                print("Sent array:", array_value)
+                print("Sent array:", bit_string)
 
 
 except KeyboardInterrupt:

@@ -1,6 +1,54 @@
 import pygame
 import serial
+import time
+import ast
 
+def read_and_shift_data(filename='output.txt'):
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+
+    if not lines:
+        return None
+    # Read the first line
+    first_line = lines[0].strip()
+
+    # Delete the first line
+    del lines[0]
+
+    # Write every other line up by 1
+    with open(filename, 'w') as file:
+        file.writelines(lines)
+
+    return first_line
+
+
+def get_array_from_file(filename='output.txt'):
+    data = read_and_shift_data(filename)
+
+    
+    if data:
+        # Assuming the data is a list of arrays, get the first array
+        data = str(data)
+        # Get the 0th, 1st, 2nd, 3rd characters
+        bits_to_extract = [int(data[i]) for i in range(4)]
+
+        # Convert the extracted bits to integers
+        key_to_play = int(''.join(map(str, bits_to_extract)), 2)
+
+        # Extract bits from 4th, 5th, 6th indices
+        bits_to_extract_2 = [int(data[i]) for i in range(5, 8)]
+        scale_to_play = int(''.join(map(str, bits_to_extract_2)), 2)
+        major = int(data[4])
+
+        return key_to_play - 1, scale_to_play, major
+        
+        # return {
+        #     'key': key_to_play - 1,
+        #     'scale': scale_to_play,
+        #     'major': major
+        # }
+    else:
+        return None  # No data in the file
 # Initialize Pygame mixer
 pygame.mixer.init()
 
@@ -10,9 +58,11 @@ key_mapping = {
 }
 
 # Define the mapping of keyboard keys to scales
-scale_mapping = {
-    'z': 'C', 'x': 'D', 'c': 'E', 'v': 'F', 'b': 'G'
-}
+# scale_mapping = {
+#     'z': 'C', 'x': 'D', 'c': 'E', 'v': 'F', 'b': 'G'
+# }
+
+scale_mapping = ['C', 'D', 'E', 'F', 'G']
 
 # Initialize the key and scale
 current_key = 'C'
@@ -65,49 +115,71 @@ try:
     print("Listening to keyboard input...")
     while True:
         
-        array_value = get_array_from_serial()
+        inputs = get_array_from_file()
+        if inputs == None:
+            continue
 
         # Get the pressed key
-        pressed_key = input("Press a key: ")
+        # pressed_key = input("Press a key: ")
+        note = inputs[0]
+        current_key = scale_mapping[inputs[1]]
+        is_major = inputs[2]
 
-
-
+        if note == -1:
+            continue
 
         # Check if the pressed key is in the note mapping
-        if pressed_key in key_mapping:
-            note = key_mapping[pressed_key]
+        # if pressed_key in key_mapping:
+        if True:
+            # note = key_mapping[pressed_key]
 
             # Stop the sound if the stop option is enabled
             if stop_option:
                 pygame.mixer.stop()
 
-            sound_mapping[pressed_key].play()
-            print(f'Note {pressed_key} played.')
+
+            #if new key diff than prev key
+
+            # for key, note in key_mapping.items():
+            #     current_scale = f'{current_key}_MAJOR_SCALE' if is_major else f'{current_key}_MINOR_SCALE'
+            #     sound_file = f'{globals()[current_scale][note]}.ogg'
+            #     sound_mapping[key] = pygame.mixer.Sound(f'./sounds/{sound_file}')
+            # print(f'Switched to key {current_key} {("Major" if is_major else "Minor")}.')
+
+            # sound_mapping[pressed_key].play()
+            current_scale = f'{current_key}_MAJOR_SCALE' if is_major else f'{current_key}_MINOR_SCALE'
+            sound_file = f'{globals()[current_scale][note]}.ogg'
+
+            # sound_mapping[note].play()
+
+            
+            pygame.mixer.Sound(f'./sounds/{sound_file}').play()
+            print(f'Note {note} played.')
 
         # Check if the pressed key is in the scale mapping
-        elif pressed_key in scale_mapping:
-            current_key = scale_mapping[pressed_key]
+        # elif pressed_key in scale_mapping:
+        #     current_key = scale_mapping[pressed_key]
 
-            # Reload sound files based on the new key
-            for key, note in key_mapping.items():
-                current_scale = f'{current_key}_MAJOR_SCALE' if is_major else f'{current_key}_MINOR_SCALE'
-                sound_file = f'{globals()[current_scale][note]}.ogg'
-                sound_mapping[key] = pygame.mixer.Sound(f'./sounds/{sound_file}')
-            print(f'Switched to key {current_key} {("Major" if is_major else "Minor")}.')
+        #     # Reload sound files based on the new key
+        #     for key, note in key_mapping.items():
+        #         current_scale = f'{current_key}_MAJOR_SCALE' if is_major else f'{current_key}_MINOR_SCALE'
+        #         sound_file = f'{globals()[current_scale][note]}.ogg'
+        #         sound_mapping[key] = pygame.mixer.Sound(f'./sounds/{sound_file}')
+        #     print(f'Switched to key {current_key} {("Major" if is_major else "Minor")}.')
 
         # Toggle between major and minor when 'y' is pressed
-        elif pressed_key == 'y':
-            is_major = not is_major
-            print(f'Switched to key {current_key} {("Major" if is_major else "Minor")}.')
+        # elif pressed_key == 'y':
+        #     is_major = not is_major
+        #     print(f'Switched to key {current_key} {("Major" if is_major else "Minor")}.')
 
         elif pressed_key == 'p':
             stop_option = not stop_option
             print(f'Stop flag toggled. {"Sound will stop when playing a new note." if stop_option else "Sound will overlap."}')
 
         # if enter is pressed stop the sound
-        elif pressed_key == '':
-            pygame.mixer.stop()
-            print('Sound stopped.')
+        # elif pressed_key == '':
+        #     pygame.mixer.stop()
+        #     print('Sound stopped.')
 
 except KeyboardInterrupt:
     print("\nExiting the program.")
