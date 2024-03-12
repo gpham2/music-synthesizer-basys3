@@ -1,4 +1,5 @@
 import pygame
+import serial
 
 # Initialize Pygame mixer
 pygame.mixer.init()
@@ -17,6 +18,17 @@ scale_mapping = {
 current_key = 'C'
 is_major = False
 stop_option = False
+
+def get_array_from_serial():
+    # Read the array from serial communication
+    array_value = ser.read(21)  # Assuming the array size is 21 bits
+
+    if array_value:
+        # Convert the received bytes back to a list of booleans
+        array_value = [bool(int(bit)) for bit in format(int.from_bytes(array_value, byteorder='big'), '021b')]
+
+    return array_value
+
 
 
 # Define scales directly with sharps
@@ -60,6 +72,9 @@ print('Stop option is:', stop_option)
 try:
     print("Listening to keyboard input...")
     while True:
+        
+        array_value = get_array_from_serial()
+
         # Get the pressed key
         pressed_key = input("Press a key: ")
 
