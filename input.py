@@ -25,11 +25,12 @@ def close_serial_port(ser):
     ser.close()
 
 
-def write_data_to_file(data, filename='test.txt'):
+def write_data_to_file(bit_string, filename='output.txt'):
     with open(filename, 'a') as file:
-        file.write(str(data) + '\n')
+        file.write(bit_string + '\n')
 
-port_name = 'COM32'
+
+port_name = 'COM39'
 
 # Open the serial port
 ser = open_serial_port(port_name)
@@ -51,16 +52,15 @@ try:
                 start_time = time.time()
                 prev_byte = byte
 
-                # byte should be 21 bits long turn it into array of size 8 of booleans
-                byte = int.from_bytes(byte, byteorder='big')
-                array_value = [bool(int(bit)) for bit in format(byte, '08b')]
-                # print("Received byte:", array_value)
+                # byte should be 8 bits long turn it into array of size 8 of 1s or 0s
+                byte_as_int = int.from_bytes(byte, byteorder='big')
+                bit_string = format(byte_as_int, '08b')
 
-                # ser.write(bytes(array_value))
-                write_data_to_file(array_value)
+                print("Sent array:", bit_string)
+
+                write_data_to_file(bit_string)
 
 
-                print("Sent array:", array_value)
 
 
 except KeyboardInterrupt:
@@ -74,31 +74,3 @@ def read_data_from_file(filename='output.txt'):
     with open(filename, 'r') as file:
         lines = file.readlines()
         return [eval(line.strip()) for line in lines]
-
-def get_array_from_file(filename='output.txt'):
-    data = read_data_from_file(filename)
-    
-    if data:
-        # Assuming the data is a list of arrays, get the first array
-        array_value = data[0]
-
-        # parse 4 left most bit, extract the number it represents and then turn that number into int
-        bits_to_extract = [0, 1, 2, 3]
-        extracted_bits = [array_value[0] >> i & 1 for i in bits_to_extract]
-        key_to_play = int(''.join(map(str, extracted_bits)), 2)
-
-        # extract bit 4, 5, 6 and convert to int
-        bits_to_extract_2 = [5, 6, 7]
-        extracted_bits = [array_value[0] >> i & 1 for i in bits_to_extract_2]
-        scale_to_play = int(''.join(map(str, extracted_bits)), 2)
-
-        # convert 4th bit to int
-        major = array_value[0] >> 4 & 1
-
-        return {
-            'key': key_to_play,
-            'scale': scale_to_play,
-            'major': major
-        }
-    else:
-        return None  # No data in the file
